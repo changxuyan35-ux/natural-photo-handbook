@@ -8,7 +8,13 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ---
+---
 
+### 🌐 在线体验 DEMO (Live Demo)
+👉 **[点击直接体验 Web 端实时姿态取景器](https://changxuyan35-ux.github.io/natural-photo-handbook/)**  
+*(无需安装任何软件，支持手机或电脑浏览器直接打开摄像头体验)*
+
+---
 ## 💡 项目痛点与核心灵感 (Inspiration)
 
 1. **被拍者的尴尬困境**：镜头前手足无措、表情僵硬、面对传统相机/手机“像在罚站”。
