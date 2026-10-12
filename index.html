@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PoseDirector - AI 智能摄影导演与姿态指导</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 10px;
+      min-height: 100vh;
+    }
+    header { text-align: center; margin-bottom: 16px; }
+    h1 { font-size: 1.5rem; color: #38bdf8; display: flex; align-items: center; gap: 8px; justify-content: center; }
+    p.subtitle { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+    /* 取景框核心容器 */
+    .viewfinder {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 3 / 4;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* 镜像翻转，符合自拍直觉 */
+    }
+
+    /* 三分构图网格线 */
+    .grid-lines {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .grid-lines > div {
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+    }
+
+    /* 姿态半透明轮廓遮罩 */
+    .pose-silhouette {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .pose-silhouette svg {
+      width: 80%;
+      height: 80%;
+      stroke: #38bdf8;
+      stroke-width: 2;
+      stroke-dasharray: 6 4;
+      fill: rgba(56, 189, 248, 0.05);
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.4));
+    }
+
+    /* 状态指示条 */
+    .status-pill {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* 控制面板 */
+    .controls {
+      width: 100%;
+      max-width: 480px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    button {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover { background: #334155; }
+    button.active { background: #0284c7; border-color: #38bdf8; }
+
+    .shutter-btn {
+      background: #f8fafc;
+      color: #0f172a;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 4px solid #38bdf8;
+      font-size: 1.5rem;
+      margin: 8px auto 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      transition: transform 0.1s;
+    }
+    .shutter-btn:active { transform: scale(0.92); }
+
+    /* 生成拍立得卡片展示区 */
+    #cardModal {
+      display: none;
+      margin-top: 20px;
+      background: #fff;
+      color: #111;
+      padding: 16px 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+    #capturedImage {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .card-footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #64748b;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📸 PoseDirector</h1>
+    <p class="subtitle">AI 智能姿态拟合与自然人像构图 Demo</p >
+  </header>
+
+  <!-- 取景框 -->
+  <div class="viewfinder">
+    <video id="webcam" autoplay playsinline></video>
+
+    <!-- 构图九宫格 -->
+    <div class="grid-lines" id="gridLines">
+      <div></div><div></div><div></div>
+      <div></div><div></div><div></div>
+      <div></div><div></div><div></div>
+    </div>
+
+ <!-- 姿态半透明轮廓 -->
+    <div class="pose-silhouette" id="poseSilhouette">
+      <!-- 默认姿态：侧身托腮姿态矢量简图 -->
+      <svg viewBox="0 0 100 100">
+        <circle cx="50" cy="25" r="12" />
+        <path d="M50 37 L50 65 M50 65 L35 95 M50 65 L65 95 M50 45 L30 55 M50 45 L70 35 L60 25" />
+      </svg>
+    </div>
+
+    <!-- 模拟 AI 感知状态 -->
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      <span id="aiTip">姿态匹配度: 91% (极佳) | 建议光线: 柔光</span>
+    </div>
+  </div>
+
+  <!-- 操作按钮面板 -->
+  <div class="controls">
+    <div class="btn-group">
+      <button class="active" id="btnPose" onclick="togglePose()">姿态引导: 开</button>
+      <button class="active" id="btnGrid" onclick="toggleGrid()">三分构图线: 开</button>
+      <button onclick="switchTemplate()">切换姿势模板 ↻</button>
+    </div>
+    <button class="shutter-btn" onclick="takeSnapshot()">📷</button>
+  </div>
+
+  <!-- 隐藏的绘图 Canvas 用于保存照片 -->
+  <canvas id="photoCanvas" style="display: none;"></canvas>
+
+  <!-- 拍摄成果卡片 -->
+  <div id="cardModal">
+    < img id="capturedImage" alt="Captured" />
+    <div class="card-footer">
+      <span>LEICA M11 · 35mm</span>
+      <span>f/1.4 · ISO 100</span>
+    </div>
+    <div style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;">自然氛围感 · 捕捉完成</div>
+  </div>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('photoCanvas');
+    const cardModal = document.getElementById('cardModal');
+    const capturedImage = document.getElementById('capturedImage');
+    const gridLines = document.getElementById('gridLines');
+    const poseSilhouette = document.getElementById('poseSilhouette');
+    const aiTip = document.getElementById('aiTip');
+
+    // 1. 调用系统摄像头
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" }, 
+          audio: false 
+        });
+        video.srcObject = stream;
+      } catch (err) {
+        aiTip.innerText = "请允许摄像头权限以体验实时姿态指导";
+      }
+    }
+    initCamera();
+
+    // 2. 交互功能控制
+    function toggleGrid() {
+      const isVisible = gridLines.style.opacity !== '0';
+      gridLines.style.opacity = isVisible ? '0' : '1';
+      document.getElementById('btnGrid').innerText = isVisible ? '三分构图线: 关' : '三分构图线: 开';
+      document.getElementById('btnGrid').classList.toggle('active', !isVisible);
+    }
+
+    function togglePose() {
+      const isVisible = poseSilhouette.style.opacity !== '0';
+      poseSilhouette.style.opacity = isVisible ? '0' : '1';
+      document.getElementById('btnPose').innerText = isVisible ? '姿态引导: 关' : '姿态引导: 开';
+      document.getElementById('btnPose').classList.toggle('active', !isVisible);
+    }
+
+    let currentTemplate = 0;
+    const tips = [
+      "姿态匹配度: 91% (极佳) | 建议: 侧头微托腮",
+      "姿态匹配度: 87% (自然) | 建议: 双手插兜微倾",
+      "姿态匹配度: 94% (极佳) | 建议: 慢步走动回眸"
+    ];
+    function switchTemplate() {
+      currentTemplate = (currentTemplate + 1) % tips.length;
+      aiTip.innerText = tips[currentTemplate];
+    }
+
+    // 3. 模拟快门抓拍并生成拍立得卡片
+    function takeSnapshot() {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      // 镜像绘制保持与视觉一致
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      capturedImage.src = canvas.toDataURL('image/png');
+      cardModal.style.display = 'block';
+      cardModal.scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
