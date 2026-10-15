@@ -1,72 +1,103 @@
-# 📸 PoseDirector (自然镜界) | AI 智能摄影导演与自然姿态指导平台
+# PoseDirector (自然镜界) | AI 智能摄影导演与姿态指导平台
 
-> 专治“拍照尴尬症”与“直男视角废片”。结合计算机视觉与多模态 AI，提供实时姿态指引、构图打分与声控导演体验。  
-> **A Hackathon Project for Real-time Pose Guidance & Aesthetic Composition.**
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)](https://flask.palletsprojects.com/)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-Pose-orange.svg)](https://developers.google.com/mediapipe)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![Hackathon Ready](https://img.shields.io/badge/Status-Hackathon--Ready-orange.svg)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
----
----
-
-### 🌐 在线体验 DEMO (Live Demo)
-👉 **[点击直接体验 Web 端实时姿态取景器](https://changxuyan35-ux.github.io/natural-photo-handbook/)**  
-*(无需安装任何软件，支持手机或电脑浏览器直接打开摄像头体验)*
-
----
-## 💡 项目痛点与核心灵感 (Inspiration)
-
-1. **被拍者的尴尬困境**：镜头前手足无措、表情僵硬、面对传统相机/手机“像在罚站”。
-2. **拍摄者的审美鸿沟**：“直男视角”把 170cm 拍成 150cm，不懂黄金分割线、光影与景深。
-3. **传统美颜相机的局限**：市面上的美颜相机只负责“磨皮瘦脸”，无法在**按下快门前**指导用户如何摆出松弛自然的姿态。
-
-👉 **我们的解决方案**：利用 **MediaPipe 骨骼关键点检测** 在取景框上投射“半透明姿态引导剪影”，配合 **多模态 AI (Vision-Language Model) 实时语音导演**，让拍照变成一场轻松的互动对话！
+> **告别僵硬摆拍与废片**。面向日常人像与旅行随拍的轻量级 AI 摄影导演平台，集成了边缘实时骨骼姿态识别、美学构图打分、语音动态导演与快门打卡成片功能。
 
 ---
 
-## ✨ 核心功能与技术特性 (Key Features)
+## 🌟 核心特性 (Key Features)
 
-### 1. 🩻 实时骨骼姿态引导 (Ghost Pose Overlay)
-- **姿态模板库**：内置“咖啡馆松弛感”、“街头抓拍回头”、“旅行大场景背影”等数百套自然姿势。
-- **骨骼实时拟合**：基于轻量化姿态估计模型实时识别人体 33 个关节点，屏幕呈现半透明骨架引导线，当用户姿势匹配度达 85% 时自动点亮快门。
-
-### 2. 🎙️ AI 多模态语音导演 (AI Voice Director)
-- 取景器实时捕获视频流，多模态 AI 扮演专业摄影师进行**温和语音引导**：
-  > *“肩膀再放松一点点，头往右侧窗户转 15 度，很好，就是这个眼神，保持！”*
-- 消除倒数三二一的紧张感，在自然对话与微笑瞬间触发自动连拍。
-
-### 3. 📐 智能构图与美学评分 (Smart Composition Engine)
-- **实时辅助线**：自动识别水平面、三分线、地平线与人脸黄金比例位置。
-- **高低机位校准**：通过重力传感器与人脸透视比，提示拍摄者“手机下移 10cm”或“稍作仰拍”以拉长腿部线条。
-
-### 4. 🎨 拍立得/徕卡风 EXIF 参数卡生成
-- 拍摄完成后，自动提取焦距、光圈、快门及色温信息，一键合成带有电影感水印的拍立得卡片，支持快速分享。
+- 📸 **实时姿态骨骼匹配 (MediaPipe Pose)**：利用 Google MediaPipe 实时提取 33 点人体骨架坐标，动态计算与标准姿态模板的匹配度。
+- 🎙️ **智能语音导演 (Voice Director TTS)**：结合 Web Speech API，在检测到姿态或视线偏差时，实时语音提示“下巴微抬、单手虚托下颌线”。
+- 📐 **专业构图辅助 (Composition Grid)**：内置黄金分割、九宫格三分法则辅助线，辅助拍摄者迅速找到最佳视觉交点。
+- 🗄️ **持久化姿态库与拍摄记录 (SQLite Storage)**：提供 RESTful API，支持多场景姿态库管理与历史成片记录回溯。
+- 🐳 **开箱即用容器化 (Docker Ready)**：支持 Docker 与 Docker Compose 一键启动前后端全栈服务。
 
 ---
 
-## 🛠️ 技术架构 (System Architecture)
+## 🏗️ 架构设计 (System Architecture)
 
-```text
-┌────────────────────────────────────────────────────────┐
-│               前端展现层 (Frontend Client)             │
-│   • 微信小程序 (原生 / Uni-app Vue3)                     │
-│   • Web 端体验 (React / Tailwind CSS / WebCam API)     │
-└───────────────────────────┬────────────────────────────┘
-                            │
-              实时视频流 / 摄像头数据
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│           边缘感知计算 (Edge Vision Pipeline)           │
-│   • MediaPipe Pose / YOLOv8-pose (人体骨骼关键点检测)    │
-│   • 姿态余弦相似度匹配算法 (Pose Cosine Similarity)      │
-│   • 智能构图算法 (三分法则与透视畸变矫正)                │
-└───────────────────────────┬────────────────────────────┘
-                            │
-               关键帧分析与语义描述
-                            ▼
-┌────────────────────────────────────────────────────────┐
-│          多模态 AI 决策层 (Multimodal AI Agent)         │
-│   • 视觉大模型 (Vision LLM): 场景审美感知与光影分析    │
-│   • 语音合成 (TTS): 拟人化实时摄影导演语音提示         │
-└────────────────────────────────────────────────────────┘
+```
+[ 用户摄像头视频流 ]
+        │
+        ├──> [ 前端 Web / Mobile Viewport ]
+        │        ├──> [ MediaPipe Pose 引擎 ] ──> 33点骨骼提取与余弦匹配度计算
+        │        ├──> [ Web Speech API ]   ──> 实时 AI 导演语音播报指导
+        │        └──> [ HTML5 Canvas ]     ──> 姿态轮廓叠加 + EXIF 拍立得卡片生成
+        │
+        └──> [ 后端 Flask RESTful API (Port 5000) ]
+                 ├──> [ 姿态模板管理 /api/v1/poses ]
+                 ├──> [ 多模态美学分析 /api/v1/director/evaluate ]
+                 └──> [ SQLite 数据存储 (posedirector.db) ]
+```
+
+---
+
+## 📂 项目结构 (Directory Structure)
+
+```
+natural-photo-handbook/
+├── backend/                  # Flask 后端服务
+│   ├── app.py                # RESTful API 路由与服务入口
+│   ├── database.py           # SQLite 数据库模型与模板预置脚本
+│   └── requirements.txt      # 后端依赖列表
+├── frontend/                 # 交互式前端界面
+│   └── index.html            # 包含 MediaPipe Pose、语音合成与相机控制
+├── docs/                     # 开发与部署规范文档
+│   ├── api_specs.md          # 接口详细定义文档
+│   └── PoseDirector_Refactoring_Roadmap.md # 深度重构白皮书
+├── docker-compose.yml        # 一键容器编排
+├── Dockerfile                # 后端镜像构建定义
+├── README.md                 # 项目使用说明
+└── LICENSE                   # MIT 开源协议
+```
+
+---
+
+## 🚀 快速开始 (Quick Start)
+
+### 方式一：本地 Python 环境运行
+
+1. **安装依赖**：
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   ```
+
+2. **初始化数据库并启动服务**：
+   ```bash
+   python app.py
+   ```
+
+3. **浏览器体验**：
+   在浏览器中访问 `http://localhost:5000`，允许摄像头权限即可进入 AI 实时拍摄导演室。
+
+---
+
+### 方式二：Docker 一键部署
+
+```bash
+docker compose up -d
+```
+服务将在 `http://localhost:5000` 自动就绪。
+
+---
+
+## 📡 API 概览 (API Overview)
+
+| 方法 | 路径 | 描述 |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/poses` | 获取场景姿态模板列表（支持按分类与难度过滤） |
+| `GET` | `/api/v1/poses/<id>` | 获取特定姿态的详细骨骼关键点与专属指导语 |
+| `POST` | `/api/v1/director/evaluate` | 提交关键点或画面帧，获取姿态匹配得分与指导意见 |
+| `POST` | `/api/v1/records` | 保存定格照片记录与打分日志 |
+
+---
+
+## 🤝 鸣谢与参考 (Acknowledgments)
+
+本项目工程化与架构设计参考了心理健康开源项目 **[1828703450qqcom-ux/xinyu (心屿)](https://github.com/1828703450qqcom-ux/xinyu)** 的多端分层规范与 RESTful 接口架构。
