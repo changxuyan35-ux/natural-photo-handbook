@@ -95,9 +95,3 @@ docker compose up -d
 | `GET` | `/api/v1/poses/<id>` | 获取特定姿态的详细骨骼关键点与专属指导语 |
 | `POST` | `/api/v1/director/evaluate` | 提交关键点或画面帧，获取姿态匹配得分与指导意见 |
 | `POST` | `/api/v1/records` | 保存定格照片记录与打分日志 |
-
----
-
-## 🤝 鸣谢与参考 (Acknowledgments)
-
-本项目工程化与架构设计参考了心理健康开源项目 **[1828703450qqcom-ux/xinyu (心屿)](https://github.com/1828703450qqcom-ux/xinyu)** 的多端分层规范与 RESTful 接口架构。
